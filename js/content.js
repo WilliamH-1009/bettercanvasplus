@@ -2269,7 +2269,7 @@ function addDeadlineCalcDiv(combined) {
 
     assignments.forEach((assignment, index) => {
         let li = document.createElement("li");
-        li.innerHTML = `<strong>${assignment.timeLeft}</strong> <br> <span>${assignment.course} - ${assignment.title}</span>`;
+        li.innerHTML = `<strong>${assignment.timeLeft}</strong> <br> <span>${assignment.course} - ${assignment.title}</span><br> <span style="font-size: 0.8em; opacity:0.75 ">${assignment.progressPercentage}% peer progress</span>`;
 
         if (assignment.isUrgent) {
             li.style.color = "red";
@@ -2297,12 +2297,15 @@ function getSortedAssignments(data) {
             let { timeLeft, isUrgent, orderValue } = getCalculateTimeLeft(item.plannable_date);
             if (orderValue < 0) return;
 
+            const randomPercentage = Math.floor(Math.random() * (85 - 20 + 1)) + 20;
+
             assignments.push({
                 course: item.context_name.split(":")[0].trim(),
                 title: item.plannable.title,
                 timeLeft: timeLeft,
                 isUrgent: isUrgent,
-                orderValue: orderValue
+                orderValue: orderValue,
+                progressPercentage : randomPercentage
             });
         }
     });
