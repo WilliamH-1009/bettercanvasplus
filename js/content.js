@@ -2235,14 +2235,32 @@ const CSRFtoken = function () {
 function addDeadlineCalcDiv(combined) {
     if (document.querySelector("#deadline_calculation")) return;
 
+    if (!document.getElementById("bettercanvas-deadline-style")) {
+        const style = document.createElement("style");
+        style.id = "bettercanvas-deadline-style";
+        style.textContent = `
+            #deadline_calculation li.bettercanvas-urgent {
+                color: red !important;
+            }
+            #deadline_calculation li a {
+                color: inherit !important;
+                text-decoration: none;
+            }
+            #deadline_calculation li a:hover {
+                text-decoration: underline;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     let targetDiv = document.getElementById("right-side");
     if (!targetDiv) return;
 
     let div = document.createElement("div");
     div.id = "deadline_calculation";
-    div.className = "";
+    div.className = "ic-app-main-content__secondary";
     div.style.display = "block";
-    div.style.padding = "0px";
+    div.style.padding = "10px";
     div.style.width = "500px";
 
     let title = document.createElement("h3");
@@ -2256,11 +2274,7 @@ function addDeadlineCalcDiv(combined) {
     urgentInfo.innerText = `urgent assignments (≤ 2 days): ${urgentCount}`;
     urgentInfo.style.fontWeight = "bold";
     urgentInfo.style.marginBottom = "10px";
-
-    if (urgentCount > 0) {
-        urgentInfo.style.color = "red";
-    }
-
+    if (urgentCount > 0) urgentInfo.style.color = "red";
     div.appendChild(urgentInfo);
 
     let ul = document.createElement("ul");
@@ -2271,16 +2285,21 @@ function addDeadlineCalcDiv(combined) {
 
     assignments.forEach((assignment, index) => {
         let li = document.createElement("li");
-        li.innerHTML = `<strong>${assignment.timeLeft}</strong> <br> <span>${assignment.course} - ${assignment.title}</span>`;
+
+        const timeText = `<strong>${assignment.timeLeft}</strong><br>`;
+        const titleLink = `<a href="${assignment.href}" target="_blank">
+            <span>${assignment.course} - ${assignment.title}</span>
+        </a>`;
+
+        li.innerHTML = timeText + titleLink;
 
         if (assignment.isUrgent) {
-            li.style.color = "red";
+            li.classList.add("bettercanvas-urgent");
             urgentList.push(`${assignment.course} - ${assignment.title} (${assignment.timeLeft})`);
         }
 
         li.style.borderBottom = "1px solid #ddd";
         li.style.padding = "10px 0";
-
         if (index === assignments.length - 1) {
             li.style.borderBottom = "none";
         }
@@ -2298,7 +2317,7 @@ function addDeadlineCalcDiv(combined) {
     document.getElementById("content").style.paddingLeft = "15px";
     document.getElementById("content").style.paddingRight = "0";
     document.getElementsByClassName("ic-DashboardCard__box")[0].style.cssText += "width: 10% !important;";
-    // document.getElementsByClassName("ic-DashboardCard__box__container")[0].style.cssText += "width: 10% !important;";
+    document.getElementById("right-side-wrapper").classList.remove("ic-app-main-content__secondary");
 }
 
 function showUrgentModal(urgentList) {
@@ -2369,7 +2388,8 @@ function getSortedAssignments(data) {
                 title: item.plannable.title,
                 timeLeft: timeLeft,
                 isUrgent: isUrgent,
-                orderValue: orderValue
+                orderValue: orderValue,
+                href: item.html_url || "#"
             });
         }
     });
@@ -2377,6 +2397,7 @@ function getSortedAssignments(data) {
     assignments.sort((a, b) => a.orderValue - b.orderValue);
     return assignments;
 }
+
 
 function getCalculateTimeLeft(plannableDate) {
     let dueDate = new Date(plannableDate);
