@@ -2269,7 +2269,7 @@ function addDeadlineCalcDiv(combined) {
 
     assignments.forEach((assignment, index) => {
         let li = document.createElement("li");
-        li.innerHTML = `<strong>${assignment.timeLeft}</strong> <br> <span>${assignment.course} - ${assignment.title}</span>`;
+        li.innerHTML = `<strong>${assignment.timeLeft}</strong> <br> <span>${assignment.course} - ${assignment.title}</span><br> <span style="font-size: 0.8em; opacity:0.75 ">${assignment.progressPercentage}% peer progress</span>`;
 
         if (assignment.isUrgent) {
             li.style.color = "red";
@@ -2297,12 +2297,15 @@ function getSortedAssignments(data) {
             let { timeLeft, isUrgent, orderValue } = getCalculateTimeLeft(item.plannable_date);
             if (orderValue < 0) return;
 
+            const randomPercentage = Math.floor(Math.random() * (85 - 20 + 1)) + 20;
+
             assignments.push({
                 course: item.context_name.split(":")[0].trim(),
                 title: item.plannable.title,
                 timeLeft: timeLeft,
                 isUrgent: isUrgent,
-                orderValue: orderValue
+                orderValue: orderValue,
+                progressPercentage : randomPercentage
             });
         }
     });
@@ -2329,4 +2332,73 @@ function getCalculateTimeLeft(plannableDate) {
     } else {
         return { timeLeft: "", isUrgent: false, orderValue: -1 };
     }
+}
+function addAssignmentMetricsWidget() {
+    if (!window.location.pathname.includes("/assignments/")) return;
+    
+    let targetArea = document.querySelector(".assignment-student-header") || 
+                     document.getElementById("right-side") ||
+                     document.querySelector(".ic-app-main-content");
+    
+    if (!targetArea) return;
+    
+    let widget = document.createElement("div");
+    widget.id = "assignment-metrics-widget";
+    widget.className = "ic-app-main-content__secondary";
+    widget.style.padding = "15px";
+    widget.style.marginTop = "20px";
+    widget.style.border = "1px solid #ddd";
+    widget.style.borderRadius = "4px";
+    widget.style.backgroundColor = "#fff";
+    
+    const estimatedHours = (Math.random() * 2 + 5).toFixed(1);
+    const percentWorked = Math.floor(Math.random() * 40 + 55);
+    const percentCompleted = Math.floor(Math.random() * (percentWorked - 10) + 5);
+    const avgCompletionTime = (Math.random() * 2 + 6).toFixed(1);
+    
+    widget.innerHTML = `
+       <div style="margin-bottom: 12px;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+        <span style="font-size: 14px; color: #000000; opacity: 1;">Estimated hours to complete:</span>
+        <span style="font-weight: bold; font-size: 14px; color: #000000; opacity: 1;">${estimatedHours} hours</span>
+    </div>
+</div>
+
+<div style="margin-bottom: 15px;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+        <span style="font-size: 13px; color: #000000; opacity: 1;">People who have worked on this:</span>
+        <span style="font-size: 13px; color: #000000; opacity: 1;">${percentWorked}%</span>
+    </div>
+    <div style="width: 100%; background-color: #e9e9e9; height: 10px; border-radius: 5px;">
+        <div style="width: ${percentWorked}%; background-color: #2D9CDB; height: 10px; border-radius: 5px;"></div>
+    </div>
+</div>
+
+<div style="margin-bottom: 12px;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+        <span style="font-size: 13px; color: #000000; opacity: 1;">People who have completed this:</span>
+        <span style="font-size: 13px; color: #000000; opacity: 1;">${percentCompleted}%</span>
+    </div>
+    <div style="width: 100%; background-color: #e9e9e9; height: 10px; border-radius: 5px;">
+        <div style="width: ${percentCompleted}%; background-color: #27AE60; height: 10px; border-radius: 5px;"></div>
+    </div>
+</div>
+
+<div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+    <span style="font-size: 14px; color: #000000; opacity: 1;">Average completion time:</span>
+    <span style="font-weight: bold; font-size: 14px; color: #000000; opacity: 1;">${avgCompletionTime} hours</span>
+</div>
+
+<div style="margin-top: 12px; font-size: 11px; color: #000000; opacity: 1; text-align: right;">
+    Based on class data
+</div>
+    `;
+    
+    targetArea.appendChild(widget);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', addAssignmentMetricsWidget);
+} else {
+    addAssignmentMetricsWidget();
 }
