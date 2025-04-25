@@ -2410,10 +2410,10 @@ function getCalculateTimeLeft(plannableDate) {
     let daysLeft = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
     let hoursLeft = Math.ceil(timeDiff / (1000 * 60 * 60));
 
-    if (daysLeft >= 10) {
-        return { timeLeft: `${daysLeft} day(s)`, isUrgent: true, orderValue: daysLeft };
+    if (daysLeft >= 2) {
+        return { timeLeft: `${daysLeft} day(s)`, isUrgent: false, orderValue: daysLeft };
     } else if (hoursLeft > 0) {
-        return { timeLeft: `${hoursLeft} hr(s)`, isUrgent: false, orderValue: hoursLeft / 24 };
+        return { timeLeft: `${hoursLeft} hr(s)`, isUrgent: true, orderValue: hoursLeft / 24 };
     } else {
         return { timeLeft: "", isUrgent: false, orderValue: -1 };
     }
