@@ -2235,6 +2235,24 @@ const CSRFtoken = function () {
 function addDeadlineCalcDiv(combined) {
     if (document.querySelector("#deadline_calculation")) return;
 
+    if (!document.getElementById("bettercanvas-deadline-style")) {
+        const style = document.createElement("style");
+        style.id = "bettercanvas-deadline-style";
+        style.textContent = `
+            #deadline_calculation li.bettercanvas-urgent {
+                color: red !important;
+            }
+            #deadline_calculation li a {
+                color: inherit !important;
+                text-decoration: none;
+            }
+            #deadline_calculation li a:hover {
+                text-decoration: underline;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     let targetDiv = document.getElementById("right-side");
     if (!targetDiv) return;
 
@@ -2256,37 +2274,105 @@ function addDeadlineCalcDiv(combined) {
     urgentInfo.innerText = `urgent assignments (≤ 2 days): ${urgentCount}`;
     urgentInfo.style.fontWeight = "bold";
     urgentInfo.style.marginBottom = "10px";
-
-    if (urgentCount > 0) {
-        urgentInfo.style.color = "red";
-    }
-
+    if (urgentCount > 0) urgentInfo.style.color = "red";
     div.appendChild(urgentInfo);
 
     let ul = document.createElement("ul");
     ul.style.listStyleType = "none";
     ul.style.paddingLeft = "10px";
 
+    let urgentList = [];
+
     assignments.forEach((assignment, index) => {
         let li = document.createElement("li");
-        li.innerHTML = `<strong>${assignment.timeLeft}</strong> <br> <span>${assignment.course} - ${assignment.title}</span><br> <span style="font-size: 0.8em; opacity:0.75 ">${assignment.progressPercentage}% peer progress</span>`;
+
+        const timeText = `<strong>${assignment.timeLeft}</strong><br>`;
+        const titleLink = `<a href="${assignment.href}" target="_blank">
+            <span>${assignment.course} - ${assignment.title}</span>
+        </a>`;
+
+        li.innerHTML = timeText + titleLink;
 
         if (assignment.isUrgent) {
-            li.style.color = "red";
+            li.classList.add("bettercanvas-urgent");
+            urgentList.push(`${assignment.course} - ${assignment.title} (${assignment.timeLeft})`);
         }
 
         li.style.borderBottom = "1px solid #ddd";
         li.style.padding = "10px 0";
-
         if (index === assignments.length - 1) {
             li.style.borderBottom = "none";
         }
-        
+
         ul.appendChild(li);
     });
 
     div.appendChild(ul);
     targetDiv.prepend(div);
+
+    if (urgentList.length > 0) {
+        showUrgentModal(urgentList);
+    }
+
+    document.getElementById("content").style.paddingLeft = "15px";
+    document.getElementById("content").style.paddingRight = "0";
+    document.getElementsByClassName("ic-DashboardCard__box")[0].style.cssText += "width: 10% !important;";
+    document.getElementById("right-side-wrapper").classList.remove("ic-app-main-content__secondary");
+}
+
+function showUrgentModal(urgentList) {
+    if (document.querySelector("#urgent-modal")) return;
+
+    const modal = document.createElement("div");
+    modal.id = "urgent-modal";
+    modal.style.position = "fixed";
+    modal.style.top = "0";
+    modal.style.left = "0";
+    modal.style.width = "100%";
+    modal.style.height = "100%";
+    modal.style.backgroundColor = "rgba(0, 0, 0, 0.4)";
+    modal.style.display = "flex";
+    modal.style.alignItems = "center";
+    modal.style.justifyContent = "center";
+    modal.style.zIndex = "9999";
+
+    const box = document.createElement("div");
+    box.style.backgroundColor = "#fff";
+    box.style.color = "black";
+    box.style.padding = "20px";
+    box.style.borderRadius = "8px";
+    box.style.width = "600px";
+    box.style.maxHeight = "100%";
+    box.style.overflowY = "auto";
+    box.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
+
+    const heading = document.createElement("h3");
+    heading.innerText = "Upcoming Urgent Assignments";
+    heading.style.marginTop = "0";
+    heading.style.cssText += "color: black !important;";
+
+    const closeBtn = document.createElement("button");
+    closeBtn.innerText = "Close";
+    closeBtn.style.marginTop = "20px";
+    closeBtn.style.padding = "6px 12px";
+    closeBtn.style.cssText += "color: black !important;";
+    closeBtn.style.cursor = "pointer";
+    closeBtn.onclick = () => modal.remove();
+
+    const list = document.createElement("ul");
+    list.style.paddingLeft = "20px";
+
+    urgentList.forEach(text => {
+        const item = document.createElement("li");
+        item.innerText = text;
+        list.appendChild(item);
+    });
+
+    box.appendChild(heading);
+    box.appendChild(list);
+    box.appendChild(closeBtn);
+    modal.appendChild(box);
+    document.body.appendChild(modal);
 }
 
 function getSortedAssignments(data) {
@@ -2305,16 +2391,15 @@ function getSortedAssignments(data) {
                 timeLeft: timeLeft,
                 isUrgent: isUrgent,
                 orderValue: orderValue,
-                progressPercentage : randomPercentage
+                href: item.html_url || "#"
             });
         }
     });
 
     assignments.sort((a, b) => a.orderValue - b.orderValue);
-    console.log(assignments);
-    console.log("assignments");
     return assignments;
 }
+
 
 function getCalculateTimeLeft(plannableDate) {
     let dueDate = new Date(plannableDate);
@@ -2325,10 +2410,10 @@ function getCalculateTimeLeft(plannableDate) {
     let daysLeft = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
     let hoursLeft = Math.ceil(timeDiff / (1000 * 60 * 60));
 
-    if (daysLeft >= 2) {
-        return { timeLeft: `${daysLeft} day(s)`, isUrgent: false, orderValue: daysLeft };
+    if (daysLeft >= 10) {
+        return { timeLeft: `${daysLeft} day(s)`, isUrgent: true, orderValue: daysLeft };
     } else if (hoursLeft > 0) {
-        return { timeLeft: `${hoursLeft} hr(s)`, isUrgent: true, orderValue: hoursLeft / 24 };
+        return { timeLeft: `${hoursLeft} hr(s)`, isUrgent: false, orderValue: hoursLeft / 24 };
     } else {
         return { timeLeft: "", isUrgent: false, orderValue: -1 };
     }
